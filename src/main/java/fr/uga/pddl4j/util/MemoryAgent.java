@@ -20,12 +20,17 @@
 package fr.uga.pddl4j.util;
 
 import fr.uga.pddl4j.exceptions.FatalException;
+import fr.uga.pddl4j.planners.Planner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.io.Serializable;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This class implements memory agent enable to compute approximation of the size of java objects.
@@ -48,7 +53,17 @@ import java.util.Map;
  * @version 1.0 - 14.06.2010
  * @see java.lang.instrument.Instrumentation
  */
-public class MemoryAgent {
+public class MemoryAgent implements Serializable {
+
+    /**
+     * The serial id of the class.
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * The logger of the class.
+     */
+    private static Logger LOGGER = LogManager.getLogger(MemoryAgent.class);
 
     /**
      * Instance of <code>java.lang.instrument.Instrument</code> injected by the Java VM.
@@ -60,7 +75,7 @@ public class MemoryAgent {
     /**
      * The default value of the <code>skipStaticField</code> flag.
      */
-    public static final boolean DEFAULT_SKIP_STATIC_FIELD = false;
+    public static final boolean DEFAULT_SKIP_STATIC_FIELD = true;
 
     /**
      * The default value of the <code>skipFinalField</code> flag.
@@ -71,6 +86,16 @@ public class MemoryAgent {
      * The default value of the <code>skipFlyweightField</code> flag.
      */
     public static final boolean DEFAULT_SKIP_FLYWEIGHT_FIELD = false;
+
+    /**
+     * The max depth inspection for deepSizeOf method.
+     */
+    public static final int MAX_DEPTH = 512;
+
+    /**
+     * The default value of the memory used.
+     */
+    public static final long DEFAULT_MEMORY = -1;
 
     /**
      * The flag used to indicate if flyweight field must be skip during the computation process.
@@ -136,6 +161,37 @@ public class MemoryAgent {
     }
 
     /**
+     * Returns the amount of storage consumed by the specified object in bytes.
+     *
+     * @param object the object to size.
+     * @return the amount of storage consumed by the specified object in bytes. -1 if JVM command line is incorrect.
+     */
+    public static long getSizeOf(Object object) {
+        try {
+            return MemoryAgent.sizeOf(object);
+        } catch (IllegalStateException ilException) {
+            LOGGER.error(ilException + "\n");
+            return MemoryAgent.DEFAULT_MEMORY;
+        }
+    }
+
+    /**
+     * Returns the amount of storage consumed by objectToSize and by all the objects reachable from it.
+     *
+     * @param object the object to size.
+     * @return the amount of storage consumed by objectToSize and by all the objects reachable from it. -1 if
+     *          JVM command line is incorrect.
+     */
+    public static long getDeepSizeOf(Object object) {
+        try {
+            return MemoryAgent.deepSizeOf(object);
+        } catch (IllegalStateException ilException) {
+            LOGGER.error(ilException + "\n");
+            return MemoryAgent.DEFAULT_MEMORY;
+        }
+    }
+
+    /**
      * Returns an implementation-specific approximation of the amount of storage consumed by the
      * specified object in bytes. The result may include some or all of the object's overhead, and
      * thus is useful for comparison within an implementation but not between implementations. The
@@ -144,7 +200,7 @@ public class MemoryAgent {
      *
      * @param object the object to size
      * @return an implementation-specific approximation of the amount of storage consumed by the
-     *     specified object in bytes.
+     *          specified object in bytes.
      * @see java.lang.instrument.Instrumentation#getObjectSize(Object)
      */
     public static long sizeOf(Object object) {
@@ -158,12 +214,12 @@ public class MemoryAgent {
     }
 
     /**
-     * Compute an implementation-specific approximation of the amount of storage consumed by
-     * object and by all the objects reachable from it
+     * Compute an implementation-specific approximation of the amount of storage consumed by object
+     * and by all the objects reachable from it.
      *
      * @param object the object to size.
      * @return an implementation-specific approximation of the amount of storage consumed by
-     *     objectToSize and by all the objects reachable from it
+     *          objectToSize and by all the objects reachable from it
      */
     public static long deepSizeOf(Object object) {
         final Map<Object, Object> doneObj = new IdentityHashMap<>();
@@ -188,21 +244,21 @@ public class MemoryAgent {
         }
         doneObj.put(obj, null);
         size = sizeOf(obj);
-        if (obj instanceof Object[]) {
+        if (obj instanceof Object[] && depth < MAX_DEPTH) {
             for (Object o : (Object[]) obj) {
                 size += deepSizeOf(o, doneObj, depth + 1);
             }
         } else {
             final Field[] fields = obj.getClass().getDeclaredFields();
             for (Field field : fields) {
-                field.setAccessible(true);
+                field.setAccessible(true); //TODO Not available with Java 10 and further, find another alternative
                 final Object o;
                 try {
                     o = field.get(obj);
                 } catch (IllegalArgumentException | IllegalAccessException iargException) {
                     throw new FatalException("Fatal error in field.getActionSet(obj) call", iargException);
                 }
-                if (MemoryAgent.isComputable(field)) {
+                if (MemoryAgent.isComputable(field) && depth < MAX_DEPTH) {
                     size += MemoryAgent.deepSizeOf(o, doneObj, depth + 1);
                 }
             }

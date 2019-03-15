@@ -32,6 +32,7 @@ import fr.uga.pddl4j.util.IntExp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -57,10 +58,6 @@ import java.util.Set;
  * definitions:
  * </p>
  * <p>
- * <i>Definition:</i> A relation is a positive inertia iff it does not occur positively in an
- * unconditional effect or the consequent of a conditional effect of an operator.
- * </p>
- * <p>
  * <i>Definition:</i> A relation is a negative inertia iff it does not occur negatively in an
  * unconditional effect or the consequent of a conditional effect of an operator.
  * </p>
@@ -78,10 +75,6 @@ import java.util.Set;
  * considered the predicates which are never made true or false by a planning operator. These were
  * used to constrain the instantiation process. Once the set of all actions has been determined, one
  * can similarly define the ground facts that are never made true or false by one of the actions.
- * </p>
- * <p>
- * <i>Definition:</i> A ground fact is a positive ground inertia iff it does not occur positively
- * in an unconditional effect or the consequent of a conditional effect of an action.
  * </p>
  * <p>
  * <i>Definition:</i> A ground fact is a negative ground inertia iff it does not occur negatively
@@ -103,11 +96,11 @@ import java.util.Set;
  * </p>
  * <p>
  * <i>Definition:</i> A ground fact is relevant if and only if:
+ * </p>
  * <ol>
  * <li> it is an initial fact and not a negative ground inertia, or if</li>
  * <li> it is not an initial fact and not a positive ground inertia.</li>
  * </ol>
- * </p>
  * <p>
  * Finally, every operator is normalized, i.e, transform precondition and effects of the operators
  * in disjunctive and conjunctive normal form, before being encoding in a compact bit set
@@ -116,18 +109,26 @@ import java.util.Set;
  * <b>Warning:</b> the encoding is only implemented for ADL problems.
  * <p>
  * Revisions:
+ * </p>
  * <ul>
  * <li>23.01.2013: add of the case when the goal can be simplified to TRUE. The coded problem
  * returned contained in that case an empty goal expression (<code>BitExp.isEmpty()</code>).</li>
  * <li>25.03.2016: Fix bug when the goal contains only one atom.</li>
  * </ul>
- * </p>
  *
  * @author D. Pellier
  * @version 1.0 - 08.06.2010
  */
-public final class Encoder {
+public final class Encoder implements Serializable {
 
+    /**
+     * The serial version id of the class.
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * The logger of the class.
+     */
     private static final Logger LOGGER = LogManager.getLogger(Encoder.class);
 
     /**
@@ -243,11 +244,11 @@ public final class Encoder {
      * <li> 5 - 1 + actions, initial and goal state after expansion of variables</li>
      * <li> 6 - 1 + facts selected as relevant to the problem</li>
      * <li> 7 - 1 + final domain representation</li>
-     * <li> > 100 - 1 + various debugging information</li>
+     * <li> 8 - 1 + various debugging information</li>
      * </ul>
      *
      * @param level the log level of the planner.
-     * @throws IllegalArgumentException if <code>level < 0</code>.
+     * @throws IllegalArgumentException if <code>level &#60; 0</code>.
      */
     public static void setLogLevel(final int level) {
         if (level < 0) {
@@ -264,7 +265,7 @@ public final class Encoder {
      * @param domain  the domain to encode.
      * @param problem the problem to encode.
      * @return the problem encoded.
-     * @throws IllegalArgumentException if the problem to encode is not ADL.
+     * @throws IllegalArgumentException if the problem to encode is not ADL and ACTION_COSTS.
      */
     public static CodedProblem encode(final Domain domain, final Problem problem) throws FatalException {
 
@@ -281,13 +282,14 @@ public final class Encoder {
         adl.add(RequireKey.UNIVERSAL_PRECONDITIONS);
         adl.add(RequireKey.QUANTIFIED_PRECONDITIONS);
         adl.add(RequireKey.CONDITIONAL_EFFECTS);
+        adl.add(RequireKey.ACTION_COSTS);
 
         Set<RequireKey> requirements = new LinkedHashSet<>();
         requirements.addAll(domain.getRequirements());
         requirements.addAll(problem.getRequirements());
         for (RequireKey rk : requirements) {
             if (!adl.contains(rk)) {
-                throw new IllegalArgumentException("problem to encode not ADL");
+                throw new IllegalArgumentException("problem to encode not ADL and ACTION_COSTS");
             }
         }
 
@@ -319,6 +321,11 @@ public final class Encoder {
         List<IntOp> intOps = IntEncoding.encodeOperators(domain.getOperators());
         // Encode the initial state in integer representation
         final Set<IntExp> intInit = IntEncoding.encodeInit(problem.getInit());
+        // Create Map containing functions and associed cost from encoded initial state
+        final Map<IntExp, Double> intInitFunctionCost = IntEncoding.encodeFunctionCostInit(intInit);
+        // Create Set containing integer representation of initial state without functions and associed cost
+        final Set<IntExp> intInitPredicates = IntEncoding.removeFunctionCost(intInit);
+
         // Encode the goal in integer representation
         final IntExp intGoal = IntEncoding.encodeGoal(problem.getGoal());
 
@@ -338,7 +345,7 @@ public final class Encoder {
         // Just for logging
         if (Encoder.logLevel == 2) {
             stringBuilder.append("\nCoded initial state:\n").append("(and");
-            for (IntExp f : intInit) {
+            for (IntExp f : intInitPredicates) {
                 stringBuilder.append(" ").append(Encoder.toString(f));
             }
             stringBuilder.append(")").append("\n\nCoded goal state:\n").append(Encoder.toString(intGoal));
@@ -357,12 +364,12 @@ public final class Encoder {
         // Computed inertia from the encode operators
         PreInstantiation.extractInertia(intOps);
         // Infer the type from the unary inertia
-        PreInstantiation.inferTypesFromInertia(intInit);
+        PreInstantiation.inferTypesFromInertia(intInitPredicates);
         // Simply the encoded operators with the inferred types.
         intOps = PreInstantiation.simplifyOperatorsWithInferedTypes(intOps);
         // Create the predicates tables used to count the occurrences of the predicates in the
         // initial state
-        PreInstantiation.createPredicatesTables(intInit);
+        PreInstantiation.createPredicatesTables(intInitPredicates);
 
         // Just for logging
         if (Encoder.logLevel == 3 || Encoder.logLevel == 4) {
@@ -377,7 +384,7 @@ public final class Encoder {
             stringBuilder.append(System.lineSeparator());
             Encoder.printTableOfTypes(stringBuilder);
             stringBuilder.append(System.lineSeparator()).append("\nPre-instantiation initial state:\n").append("(and");
-            for (IntExp f : intInit) {
+            for (IntExp f : intInitPredicates) {
                 stringBuilder.append(" ").append(Encoder.toString(f));
             }
             stringBuilder.append(")").append("\n\nPre-instantiation goal state:\n").append(Encoder.toString(intGoal));
@@ -409,7 +416,7 @@ public final class Encoder {
             Encoder.printTableOfTypes(stringBuilder);
             stringBuilder.append(System.lineSeparator());
             stringBuilder.append("\nPre-instantiation initial state:\n").append("(and");
-            for (IntExp f : intInit) {
+            for (IntExp f : intInitPredicates) {
                 stringBuilder.append(" ").append(Encoder.toString(f));
             }
             stringBuilder.append(")").append("\n\nPre-instantiation goal state:\n").append("(and");
@@ -432,11 +439,14 @@ public final class Encoder {
         // Extract the ground inertia from the instantiated operators
         PostInstantiation.extractGroundInertia(intOps);
         // Simplify the operators with the ground inertia information previously extracted
-        PostInstantiation.simplyOperatorsWithGroundInertia(intOps, intInit);
+        PostInstantiation.simplyOperatorsWithGroundInertia(intOps, intInitPredicates);
         // Extract the relevant facts from the simplified and instantiated operators
-        PostInstantiation.extractRelevantFacts(intOps, intInit);
+        PostInstantiation.extractRelevantFacts(intOps, intInitPredicates);
         // Simplify the goal with ground inertia information
-        PostInstantiation.simplifyGoalWithGroundInertia(intGoal, intInit);
+        PostInstantiation.simplifyGoalWithGroundInertia(intGoal, intInitPredicates);
+        // Extract increase and add value to BitOp cost
+        PostInstantiation.simplifyIncrease(intOps, intInitFunctionCost);
+
         // The table of ground inertia are no more needed
         Encoder.tableOfGroundInertia = null;
 
@@ -476,7 +486,7 @@ public final class Encoder {
         }
 
         // Encode the initial state in bit set representation
-        Encoder.init = BitEncoding.encodeInit(intInit, map);
+        Encoder.init = BitEncoding.encodeInit(intInitPredicates, map);
         // Encode the operators in bit set representation
         try {
             Encoder.operators.addAll(0, BitEncoding.encodeOperators(intOps, map));

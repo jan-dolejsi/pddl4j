@@ -28,6 +28,7 @@ import fr.uga.pddl4j.util.IntExp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,19 +47,27 @@ import java.util.Set;
  * </p>
  * <p>
  * <b>Notes:</b>
+ * </p>
  * <ul>
  * <li> the problem of converting a well form formula of the first order-logic into DNF of CNF is
  * exponential. </li>
  * <li>The method does not compute the shorter DNF or CNF formula. If you want it have a look to
  * the Quine and McCluskey algorithm.</li>
  * </ul>
- * </p>
  *
  * @author D. Pellier
  * @version 1.0 - 10.06.2010
  */
-final class BitEncoding {
+final class BitEncoding implements Serializable {
 
+    /**
+     * The serial version id of the class.
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * The logger of the class.
+     */
     private static final Logger LOGGER = LogManager.getLogger(BitEncoding.class);
 
     /**
@@ -85,6 +94,7 @@ final class BitEncoding {
         for (IntOp op : operators) {
             final int arity = op.getArity();
             final BitOp bOp = new BitOp(op.getName(), arity);
+            bOp.setCost(op.getCost());
 
             // Initialize the parameters of the operator
             for (int i = 0; i < arity; i++) {
@@ -280,6 +290,7 @@ final class BitEncoding {
                 final String name = op.getName();
                 final int arity = op.getArity();
                 final IntOp newOp = new IntOp(name, arity);
+                newOp.setCost(op.getCost());
                 for (int i = 0; i < arity; i++) {
                     newOp.setTypeOfParameter(i, op.getTypeOfParameters(i));
                 }
@@ -381,7 +392,7 @@ final class BitEncoding {
             case OR:
                 List<IntExp> children = exp.getChildren();
                 int index = 0;
-                while ( index < children.size()) {
+                while (index < children.size()) {
                     final IntExp ei = children.get(index);
                     BitEncoding.toDNF(ei);
                     if (ei.getConnective().equals(Connective.OR)) {

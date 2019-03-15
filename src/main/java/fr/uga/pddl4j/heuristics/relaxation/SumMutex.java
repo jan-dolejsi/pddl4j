@@ -20,6 +20,7 @@
 package fr.uga.pddl4j.heuristics.relaxation;
 
 import fr.uga.pddl4j.encoding.CodedProblem;
+import fr.uga.pddl4j.planners.statespace.search.strategy.Node;
 import fr.uga.pddl4j.util.BitExp;
 import fr.uga.pddl4j.util.BitState;
 
@@ -35,6 +36,11 @@ import fr.uga.pddl4j.util.BitState;
  * @see Sum
  */
 public final class SumMutex extends GraphHeuristic {
+
+    /**
+     * The serial version id of the class.
+     */
+    private static final long serialVersionUID = 1L;
 
     /**
      * Creates a new <code>SUM_MUTEX</code> heuristic for a specified planning problem.
@@ -64,5 +70,19 @@ public final class SumMutex extends GraphHeuristic {
         super.setGoal(goal);
         super.expandPlanningGraph(state);
         return super.isGoalReachable() ? this.getSumValue() : Integer.MAX_VALUE;
+    }
+
+    /**
+     * Return the estimated distance to the goal to reach the specified state. If the return value is
+     * <code>DOUBLE.MAX_VALUE</code>, it means that the goal is unreachable from the specified
+     * state.
+     *
+     * @param node the state from which the distance to the goal must be estimated.
+     * @param goal the goal expression.
+     * @return the distance to the goal state from the specified state.
+     */
+    @Override
+    public double estimate(final Node node, final BitExp goal) {
+        return estimate((BitState) node, goal);
     }
 }

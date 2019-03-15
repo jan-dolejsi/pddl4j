@@ -19,6 +19,8 @@
 
 package fr.uga.pddl4j.util;
 
+import java.util.Arrays;
+
 /**
  * This abstract class implements the common part of an operator what ever its representation,
  * i.e., integer or bit set.
@@ -82,10 +84,10 @@ public abstract class AbstractCodedOp implements CodedOp {
     /**
      * Creates a new operator with a default cost and duration set to 1.0.
      *
-     * @param name  the name of the operator.
-     * @param arity the arity of the operator.
+     * @param name     the name of the operator.
+     * @param arity    the arity of the operator.
      * @param duration the duration ot the operator.
-     * @param cost the cost of the operator.
+     * @param cost     the cost of the operator.
      * @throws NullPointerException if <code>name == null</code>.
      */
     protected AbstractCodedOp(final String name, final int arity, final double duration, final double cost) {
@@ -175,7 +177,7 @@ public abstract class AbstractCodedOp implements CodedOp {
      *
      * @param index the index of the parameter.
      * @param type  the type to set.
-     * @throws IllegalArgumentException       if type < 0.
+     * @throws IllegalArgumentException if type &#60; 0.
      */
     @Override
     public final void setTypeOfParameter(final int index, final int type) {
@@ -208,7 +210,7 @@ public abstract class AbstractCodedOp implements CodedOp {
      *
      * @param index the index of the parameter to instantiate.
      * @param value the value of instantiation.
-     * @throws IllegalArgumentException       if value < 0.
+     * @throws IllegalArgumentException if value &#60; 0.
      */
     @Override
     public final void setValueOfParameter(final int index, final int value) {
@@ -287,6 +289,26 @@ public abstract class AbstractCodedOp implements CodedOp {
     }
 
     /**
+     * Returns the list of parameters of the operator.
+     *
+     * @return the list of parameters of the operator.
+     */
+    @Override
+    public int[] getParameters() {
+        return Arrays.copyOf(parameters, parameters.length);
+    }
+
+    /**
+     * Returns the values that represents the instantiated parameters of the operator.
+     *
+     * @return the values that represents the instantiated parameters of the operator.
+     */
+    @Override
+    public int[] getInstantiations() {
+        return Arrays.copyOf(instantiations, instantiations.length);
+    }
+
+    /**
      * Returns <code>true</code> if this operator is equal to an object. This
      * method returns <code>true</code> if the object is a not null instance
      * of the class <code>CodedOp</code> and both operator have the same name.
@@ -299,7 +321,8 @@ public abstract class AbstractCodedOp implements CodedOp {
     public boolean equals(final Object obj) {
         if (obj != null && obj instanceof CodedOp) {
             final CodedOp other = (CodedOp) obj;
-            return this.getName().equals(other.getName());
+            return this.getName().equals(other.getName())
+                && Arrays.equals(this.getInstantiations(), ((CodedOp) obj).getInstantiations());
         }
         return false;
     }

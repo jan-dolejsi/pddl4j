@@ -36,9 +36,9 @@ import java.util.Map;
 public class Symbol implements Serializable {
 
     /**
-     * The serial version id of the class.
+     * The serial id of the class.
      */
-    private static final long serialVersionUID = -4707714084871593022L;
+    private static final long serialVersionUID = 1L;
 
     /**
      * The name of rename variable.
@@ -61,6 +61,18 @@ public class Symbol implements Serializable {
          * The action symbol.
          */
         ACTION,
+        /**
+         * The method symbol.
+         */
+        METHOD,
+        /**
+         * The task symbol.
+         */
+        TASK,
+        /**
+         * The alias symbol.
+         */
+        ALIAS,
         /**
          * The preference symbol.
          */
@@ -92,7 +104,7 @@ public class Symbol implements Serializable {
         /**
          * The problem symbol.
          */
-        PROBLEM,
+        PROBLEM
     }
 
     /**
@@ -243,7 +255,7 @@ public class Symbol implements Serializable {
      * indicates that the attribute was not initialized.
      *
      * @return the begin line of the file where this symbol appear or <code>-1</code> if it was
-     *     not initialized.
+     *          not initialized.
      */
     public final int getBeginLine() {
         return this.beginLine;
@@ -254,7 +266,7 @@ public class Symbol implements Serializable {
      * indicates that the attribute was not initialized.
      *
      * @return the begin column of the file where this symbol appear or <code>-1</code> if it was
-     *     not initialized.
+     *          not initialized.
      */
     public final int getBeginColumn() {
         return this.beginColumn;
@@ -265,7 +277,7 @@ public class Symbol implements Serializable {
      * indicates that the attribute was not initialized.
      *
      * @return the end line of the file where this symbol appear or <code>-1</code> if it was
-     *     not initialized.
+     *          not initialized.
      */
     public final int getEndLine() {
         return this.endLine;
@@ -276,7 +288,7 @@ public class Symbol implements Serializable {
      * indicates that the attribute was not initialized.
      *
      * @return the end column of the file where this symbol appear or <code>-1</code> if it was
-     *     not initialized.
+     *          not initialized.
      */
     public final int getEndColumn() {
         return this.endColumn;
@@ -289,7 +301,7 @@ public class Symbol implements Serializable {
      *
      * @param index the index of the symbol.
      * @return the old image of the symbol or null if the symbol was not renamed.
-     * @throws IllegalArgumentException if index is < 0.
+     * @throws IllegalArgumentException if index is &#60; 0.
      */
     public final String renameVariables(final int index) {
         if (index < 0) {
@@ -331,7 +343,7 @@ public class Symbol implements Serializable {
      *
      * @param object the other object.
      * @return <tt>true</tt> if this symbol is equal to <tt>object</tt>, i.e., <tt>other</tt>
-     *     is not null and of kind <tt>Symbol</tt> and it has the same image; otherwise return <tt>false</tt>.
+     *          is not null and of kind <tt>Symbol</tt> and it has the same image; otherwise return <tt>false</tt>.
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override

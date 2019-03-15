@@ -1,6 +1,5 @@
 ## PDDL4J library
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.45971.svg)](http://dx.doi.org/10.5281/zenodo.45971)
-[![Build Status](http://pddl4j.imag.fr/jenkins/job/pddl4j-base/badge/icon)](http://pddl4j.imag.fr/jenkins/job/pddl4j-base)
 
 ### 1. Contact
 
@@ -45,6 +44,20 @@ simply operators into ground actions based on inertia properties.
 The pddl4j library is package with "gradle". If ant is not installed on your computer,
 go to https://gradle.org/ and install it.
 
+#### Dependency
+
+Java JDK 8 must be installed on the computer that will run PDDL4J:
+
+**On Windows**
+
+Go to Oracle website and download the JDk corresponding to your computer architecture (x64 or x86): [Java](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
+
+After the installation, you have to add java to your Windows *PATH*.
+
+**On Linux (Debian / Ubuntu)**
+
+    sudo apt-get install openjdk-8-jdk
+
 #### 3.1 How to build PDDL4J?
 
 Type at the root of the PDDL4J distribution:
@@ -75,7 +88,9 @@ Planners are available in the "planners" package of the distribution. For
 instance, this archive contains a simple planner based on A* search strategy
 called HSP. To launch this planner use the following command line:
 
-> java -javaagent:build/libs/pddl4j-VERSION.jar -server -Xms2048m -Xmx2048m fr.uga.pddl4j.planners.hsp.HSP -o pddl/blocksworld/domain.pddl -f pddl/blocksworld/p15.pddl
+> java -javaagent:build/libs/pddl4j-3.8.2.jar -server -Xms2048m -Xmx2048m fr.uga.pddl4j.planners.statespace.StateSpacePlannerFactory -o pddl/blocksworld/domain.pddl -f pddl/blocksworld/p15.pddl
+
+> java -jar build/libs/pddl4j-3.8.2.jar -o pddl/blocksworld/domain.pddl -f pddl/blocksworld/p15.pddl
 
 Or use the gradle run command:
 > gradle run -PArgs=-o,pddl/blocksworld/domain.pddl,-f,pddl/blocksworld/p15.pddl
@@ -83,7 +98,109 @@ Or use the gradle run command:
 Note: A set of planning problems is available in the web site of the international
 planning competition: http://ipc.icaps-conference.org.
 
-### 4. Changelog
+### 4. How to cite
+
+PDDL4J: a planning domain description library for java
+https://doi.org/10.1080/0952813X.2017.1409278
+
+> D. Pellier & H. Fiorino (2017) PDDL4J: a planning domain description library for java, Journal of Experimental & Theoretical Artificial Intelligence, 30:1, 143-176, DOI: 10.1080/0952813X.2017.1409278
+
+### 5. Changelog
+
+**PDDL4J v3.8.2**
+
+*Search strategy*
+* Fix issue with anytime solution
+* Fix issue with SolutionListener
+
+*JUnit*
+* Fix issue on Windows
+
+**PDDL4J v3.8.1**
+
+*Parser*
+* Add HTN features in Lexer
+
+*Search strategy*
+* Fix AStar
+
+**PDDL4J v3.8**
+
+*Global*
+* Add ACTION-COST support in PDDL4J (parser, encoder, solver)
+
+*Planner*
+* Add FF Anytime planner
+* Add Hill Climbing Anytime planner
+* Add Generic Anytime planner
+
+*Heuristic*
+* Add MIN_COST heuristic
+
+*Search Strategy*
+* Add Anytime Search Strategies
+
+*Others*
+* Bug fix
+* Add JUnit tests
+
+**PDDL4J v3.7.3**
+
+*Global*
+* Add SolutionEvent and SolutionListener (for StateSpaceStrategy)
+
+*Parser*
+* Fix End Of File bug in Lexer
+
+*Planner*
+* Fix bugs for GenericPlanner
+
+**PDDL4J v3.7.2**
+
+*State space strategy*
+* Add Generic planner structure
+
+*Parser*
+* Fix parser bug 
+
+*Global*
+* Add BNF
+
+**PDDL4J v3.7.1**
+
+*State space strategy*
+* Add Breadth First Search and Depth First Search
+* Add associated JUnit tests
+
+*Global*
+* Add CLI script to launch PDDL4J
+* Patch PDDL4J for Java 10
+
+**PDDL4J v3.7.0**
+
+*Update project tools*
+* log4j 2.11
+* Checkstyle 8.9
+* SonarQube 2.6.1
+* Javacc 2.4
+* Gradle wrapper 4.8
+* Add Jenkinsfile script for CI
+
+*Planner*
+* New package: Statespace with HSP and FF planners
+* Add StateSpacePlanner and StateSpacePlannerFactory interfaces
+* Use StateSpacePlannerFactory to create state space planners
+
+*State space strategy*
+* Search strategies are now independant from planners: Add StateSpaceStrategy interface
+* A*, Greedy Best First Search, Enforced Hill Climbing and Hill Climbing are available
+* Add JUnit tests
+
+*Global*
+* Add tests
+* Fix bugs and javadoc
+* Memory Agent: PDDL4J could work even if JVM command line is not given
+* Big work on JUnit tests and VAL
 
 **PDDL4J v3.6.0**
 

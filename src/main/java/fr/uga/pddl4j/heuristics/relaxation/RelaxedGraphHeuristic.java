@@ -43,6 +43,11 @@ import java.util.List;
 public abstract class RelaxedGraphHeuristic extends AbstractHeuristic {
 
     /**
+     * The serial version id of the class.
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
      * The array of unconditional operators of the problem.
      */
     private int[][] unconditionalOperators;
@@ -524,7 +529,7 @@ public abstract class RelaxedGraphHeuristic extends AbstractHeuristic {
                     pGk.andNot(pEffect);
                     nGk.andNot(nEffect);
                     // We increment the number of action of the relaxed plan
-                    value++;
+                    value += this.getOperators().get(resolverIndex).getCost();
                 } else { // NOOP case
                     pGk1.clear(pg);
                     pGk.clear(pg);
@@ -558,7 +563,7 @@ public abstract class RelaxedGraphHeuristic extends AbstractHeuristic {
                     pGk.andNot(pEffect);
                     nGk.andNot(nEffect);
                     // We increment the number of action of the relaxed plan
-                    value++;
+                    value += this.getOperators().get(resolverIndex).getCost();
                 } else { // NOOP case
                     nGk1.set(ng);
                     nGk.clear(ng);
@@ -585,7 +590,7 @@ public abstract class RelaxedGraphHeuristic extends AbstractHeuristic {
      * others.
      *
      * @param resolvers the list of resolver of p.
-     * @param lev         the level.
+     * @param lev       the level.
      * @return the easier resolver for the proposition <code>p</code> at level <code>lev</code> or
      * <code>null</code> if a NOOP operator is available.
      */
